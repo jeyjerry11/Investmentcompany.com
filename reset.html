@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reset Password</title>
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #1CB5E0, #000046);
+      color: white; display: flex;
+      justify-content: center; align-items: center;
+      height: 100vh;
+    }
+    .box {
+      background: rgba(255,255,255,0.1);
+      padding: 30px; border-radius: 15px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+      width: 90%; max-width: 400px;
+    }
+    input, button {
+      width: 100%; padding: 12px; margin: 10px 0;
+      border: none; border-radius: 10px;
+      font-size: 16px;
+    }
+    button {
+      background: #fff; color: #000046;
+      font-weight: bold; cursor: pointer;
+    }
+    button:hover { background: #eee; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Reset Password</h2>
+    <form id="resetForm">
+      <input type="password" id="password" placeholder="New Password" required>
+      <button type="submit">Update Password</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("resetForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      const password = document.getElementById("password").value;
+
+      const response = await fetch(`http://localhost:5000/api/reset/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+      alert(data.message);
+
+      if (response.ok) window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>

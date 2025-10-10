@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - Ticket Master</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1d2b64, #f8cdda);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: white;
+      animation: fadeIn 1.2s ease-in-out;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      width: 90%;
+      max-width: 400px;
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      background-color: #fff;
+      color: #1d2b64;
+      padding: 12px;
+      border: none;
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 15px;
+    }
+    button:hover { background-color: #eee; }
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Create Your Ticket Master Account</h2>
+    <form id="registerForm">
+      <input type="text" id="fullname" placeholder="Full Name" required>
+      <input type="email" id="email" placeholder="Email Address" required>
+      <input type="tel" id="phone" placeholder="Phone Number" required>
+      <input type="date" id="dob" required>
+      <input type="password" id="password" placeholder="Create Password" required>
+      <button type="submit">Register</button>
+    </form>
+    <div class="message" id="msgBox"></div>
+  </div>
+
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const msgBox = document.getElementById("msgBox");
+      msgBox.textContent = "⏳ Creating your account...";
+
+      const user = {
+        name: document.getElementById("fullname").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        dob: document.getElementById("dob").value,
+        password: document.getElementById("password").value
+      };
+
+      // 📝 Save user locally (simulate registration)
+      localStorage.setItem("kingc_user", JSON.stringify(user));
+
+      // ✅ Show success message
+      msgBox.textContent = "✅ Account created! Redirecting to dashboard...";
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 1500);
+
+      /* 
+      🚨 Future: When you add backend
+      try {
+        const response = await fetch("http://localhost:5000/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          msgBox.textContent = "❌ " + (data.message || "Registration failed");
+          return;
+        }
+        // ✅ Ask user to verify email/phone before redirect
+      } catch (err) {
+        msgBox.textContent = "⚠️ Error connecting to server.";
+      }
+      */
+    });
+  </script>
+</body>
+</html>

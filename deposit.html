@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Deposit - KingC</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #134E5E, #71B280);
+      color: white;
+      animation: fadeIn 1.2s ease-in;
+    }.container {
+  max-width: 600px;
+  margin: auto;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.details, .btc-box {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.details span, .highlight {
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-top: 30px;
+  font-size: 16px;
+  border: none;
+  border-radius: 30px;
+  background: white;
+  color: #134E5E;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #f0f0f0;
+}
+
+.copy-btn {
+  background: #ffcc00;
+  color: black;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.qr-image {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.qr-image img {
+  max-width: 200px;
+  border-radius: 10px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+  </style>
+</head>
+<body>  <div class="container">
+    <h2>Deposit Instructions</h2>
+    <div id="deposit-info"></div>
+    <button onclick="goToUpload()">I’ve Sent the Payment – Upload Receipt</button>
+  </div>
+ <script>
+  const user = JSON.parse(localStorage.getItem("kingc_user"));
+  if (!user || !user.investment || !user.investment.amount) {
+    alert("No investment plan found. Returning to dashboard.");
+    window.location.href = "dashboard.html";
+  }
+
+  const depositInfo = document.getElementById("deposit-info");
+  const amount = user.investment.amount;
+  const currency = user.investment.currency;
+
+  const accounts = {
+    ARS: { bank: ", only BTC payment supported below", account: "N/A", name: "KingC Argentina" },
+    USD: { bank: ", only BTC supported below", account: "N/A", name: "3GFrioqhjXWQBtvnyVbNvXUPC75DCPQyFd" },
+    BTC: {
+      wallet: "18zcBGVZoXvVA2MhGiNtbXPeZ23gyMegWe",
+      qr: "https://www.bitcoinqrcodegenerator.net/img/example_qr.png"
+    }
+  };
+
+  let html = `<p>You are investing <span class="highlight">${currency === 'BTC' ? '₿' : '$'}${amount}</span> in the <span class="highlight">${currency}</span> plan.</p>`;
+
+  if (currency === 'BTC') {
+    html += `
+      <p>Please send exactly <span class="highlight">₿${amount}</span> to your Bitcoin wallet address below:</p>
+      <div class="btc-box" id="wallet-address">${accounts.BTC.wallet}</div>
+      <button class="copy-btn" onclick="copyWallet()">Copy Wallet Address</button>
+      <div class="qr-image">
+        <p>Or scan QR code:</p>
+        <img src="${accounts.BTC.qr}" alt="Bitcoin QR Code">
+      </div>
+      <p>Upload your receipt (transaction hash or screenshot) after payment.</p>
+    `;
+  } else {
+    const acc = accounts[currency];
+    html += `
+      <p>Please make payment to the account below:</p>
+      <div class="details">
+        <p><span>Bank Transfer Chat agent( Parkjimmm205@gmail.com ) :</span> parkjimmm205@gmail.com on Google chat or direct email ${acc.bank}</p>
+        <p><span>Please Manually Copy Wallet:</span> ${acc.account}</p>
+        <p><span>Your Bitcoin Wallet:</span> ${acc.name}</p>
+      </div>
+      <p>Upload your receipt after payment.</p>
+    `;
+  }
+
+  depositInfo.innerHTML = html;
+
+  function goToUpload() {
+    window.location.href = "receiptupload.html";
+  }
+
+  function copyWallet(showAlert = true) {
+    const wallet = document.getElementById("wallet-address").textContent;
+    navigator.clipboard.writeText(wallet).then(() => {
+      if (showAlert) alert("✔️ Wallet address copied to clipboard!");
+    });
+  }
+
+  // 🔁 Auto-copy for BTC on load
+  window.addEventListener("DOMContentLoaded", () => {
+    if (currency === "BTC") {
+      setTimeout(() => {
+        copyWallet(false); // auto-copy silently
+        const autoMsg = document.createElement("p");
+        autoMsg.textContent = "🔁 Wallet address auto-copied!";
+        autoMsg.style.color = "#ffcc00";
+        autoMsg.style.fontSize = "14px";
+        autoMsg.style.marginTop = "10px";
+        document.getElementById("wallet-address").after(autoMsg);
+      }, 500); // small delay so DOM loads
+    }
+  });
+</script>
+</body>
+</html>

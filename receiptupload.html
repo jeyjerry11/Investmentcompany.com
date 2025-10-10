@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Receipt - KingC</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #000428, #004e92);
+      color: white;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(255,255,255,0.05);
+      padding: 30px;
+      border-radius: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      background: #ffffff11;
+      border: none;
+      border-radius: 10px;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 30px;
+      padding: 15px;
+      background: white;
+      color: #004e92;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #preview {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #preview img {
+      max-width: 100%;
+      border-radius: 15px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Payment Receipt</h2>
+
+    <label for="receipt">Upload Receipt Image</label>
+    <input type="file" id="receipt" accept="image/*" required>
+
+    <div id="preview"></div>
+
+    <button onclick="uploadReceipt()">Upload & Go to Dashboard</button>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem("kingc_user"));
+
+    if (!user || !user.investment || !user.investment.amount || !user.investment.currency) {
+      alert("No investment plan found. Redirecting to dashboard.");
+      window.location.href = "dashboard.html";
+    }
+
+    const receiptInput = document.getElementById("receipt");
+    const previewDiv = document.getElementById("preview");
+
+    receiptInput.addEventListener("change", () => {
+      const file = receiptInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewDiv.innerHTML = `<img src="${e.target.result}" alt="Receipt Preview">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function uploadReceipt() {
+      const file = receiptInput.files[0];
+      if (!file) {
+        alert("Please select a receipt image.");
+        return;
+      }
+
+      const { amount, currency } = user.investment;
+
+      if (!user.balances) {
+        user.balances = { NGN: 0, USD: 0, ARS: 0, BTC: 0 };
+      }
+
+      if (!user.balances[currency]) {
+        user.balances[currency] = 0;
+      }
+
+      if (!user.investments) user.investments = [];
+
+      const newInvestment = {
+        amount,
+        currency,
+        timestamp: Date.now(),
+        credited: false,
+        initialAdded: true,
+        receiptUploaded: true
+      };
+
+      // Add to correct currency balance
+      user.balances[currency] += amount;
+
+      // Save investment log
+      user.investments.push(newInvestment);
+
+      // Remove temporary pending investment
+      delete user.investment;
+
+      // Save changes
+      localStorage.setItem("kingc_user", JSON.stringify(user));
+
+      alert("Receipt uploaded successfully!");
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</body>
+</html>

